@@ -17,9 +17,7 @@ type Producer struct {
 
 // Producer 创建生产者
 func (rmq *RocketMQ) Producer() (*Producer, error) {
-	if rmq.debug {
-		_ = os.Setenv("mq.consoleAppender.enabled", "true")
-	}
+	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
 	golang.ResetLogger()
 
 	opts := []golang.ProducerOption{

@@ -16,9 +16,7 @@ type Consumer struct {
 
 // Consumer 创建消费者
 func (rmq *RocketMQ) Consumer() (*Consumer, error) {
-	if rmq.debug {
-		_ = os.Setenv("mq.consoleAppender.enabled", "true")
-	}
+	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
 	golang.ResetLogger()
 
 	se := make(map[string]*golang.FilterExpression, len(rmq.topic))

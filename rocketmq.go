@@ -7,7 +7,7 @@ import (
 )
 
 type RocketMQ struct {
-	debug              bool
+	debug              string
 	topic              []string
 	endpoint           string
 	accessKey          string
@@ -22,7 +22,11 @@ type Option func(*RocketMQ)
 
 func WithDebug(debug bool) Option {
 	return func(rmq *RocketMQ) {
-		rmq.debug = debug
+		if debug {
+			rmq.debug = "true"
+			return
+		}
+		rmq.debug = "false"
 	}
 }
 
@@ -52,6 +56,7 @@ func WithAwaitDuration(awaitDuration time.Duration) Option {
 
 func New(endpoint, accessKey, secretKey string, topic []string, opts ...Option) *RocketMQ {
 	rmq := &RocketMQ{
+		debug:     "true",
 		endpoint:  endpoint,
 		accessKey: accessKey,
 		secretKey: secretKey,
