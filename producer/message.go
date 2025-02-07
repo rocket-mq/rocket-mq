@@ -12,7 +12,7 @@ type Message struct {
 	body           []byte
 	keys           []string
 	tag            string
-	delayTimestamp time.Duration
+	delayTimestamp time.Time
 	messageGroup   string
 }
 
@@ -41,7 +41,13 @@ func WithTag(tag string) Option {
 // 延时消息
 func WithDelayTimestamp(delayTimestamp time.Duration) Option {
 	return func(m *Message) {
-		m.delayTimestamp = delayTimestamp
+		m.delayTimestamp = time.Now().Add(delayTimestamp)
+	}
+}
+
+func WithDelayTime(t time.Time) Option {
+	return func(m *Message) {
+		m.delayTimestamp = t
 	}
 }
 
@@ -82,9 +88,9 @@ func (m *Message) Wrap() *golang.Message {
 		message.SetTag(m.tag)
 	}
 
-	if m.delayTimestamp > 0 {
+	if !m.delayTimestamp.IsZero() {
 		// 延时消息
-		message.SetDelayTimestamp(time.Now().Add(m.delayTimestamp))
+		message.SetDelayTimestamp(m.delayTimestamp)
 	}
 
 	if m.messageGroup != "" {

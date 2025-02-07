@@ -79,6 +79,7 @@ func main() {
         producer.WithTag("tag-2"), // 选填
         producer.WithKeys("key-2"), // 选填
         producer.WithDelayTimestamp(time.Hour), // 延时消息必填
+        producer.WithDelayTime(time.Now().Add(time.Hour)), // 延时消息必填，和上面二选一
     )
     res, err := producers.Send(context.Background(), message)
     if err != nil {
