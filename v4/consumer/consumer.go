@@ -64,6 +64,10 @@ func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64, f func(mq_http
 				}
 				endChan <- struct{}{}
 			}
+		case <-errChan:
+			{
+				endChan <- struct{}{}
+			}
 		case <-time.After(35 * time.Second):
 			{
 				endChan <- struct{}{}
