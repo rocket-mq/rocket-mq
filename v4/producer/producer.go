@@ -92,6 +92,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 								_ = p.trans.Rollback(v.ReceiptHandle)
 							}
 						}
+						endChan <- struct{}{}
 					}
 				case <-errChan:
 					{
