@@ -1,12 +1,9 @@
 package consumer
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aliyunmq/mq-http-go-sdk"
-	"github.com/gogap/errors"
 )
 
 type Consumer struct {
@@ -48,78 +45,37 @@ func New(endpoint, accessKey, secretKey, topic, instanceId, groupId string, opts
 	return c
 }
 
-func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64) (<-chan mq_http_sdk.ConsumeMessageResponse, <-chan error) {
+func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64, f func(mq_http_sdk.ConsumeMessageEntry)) {
+	endChan := make(chan struct{})
 	respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
 	errChan := make(chan error)
-	_errChan := make(chan error)
 
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				errChan <- fmt.Errorf("%s", r)
+				endChan <- struct{}{}
 			}
 		}()
-		select {
-		case err := <-_errChan:
-			if !strings.Contains(err.(errors.ErrCode).Error(), "MessageNotExist") {
-				errChan <- err
-			}
-		}
-	}()
-
-	c.consumer.ConsumeMessage(respChan, _errChan, numOfMessage, waitSeconds)
-
-	return respChan, errChan
-}
-
-func (c *Consumer) Ack(receiptHandles []string) error {
-	return c.consumer.AckMessage(receiptHandles)
-}
-
-func (c *Consumer) ReceiveAndAutoAck(numOfMessage int32, waitSeconds int64) ([]mq_http_sdk.ConsumeMessageEntry, error) {
-	respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
-	errChan := make(chan error)
-	message := make(chan mq_http_sdk.ConsumeMessageEntry, numOfMessage)
-	list := make([]mq_http_sdk.ConsumeMessageEntry, 0, numOfMessage)
-	stop := make(chan error)
-
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				stop <- fmt.Errorf("%s", r)
-			}
-		}()
-
 		select {
 		case resp := <-respChan:
 			{
-				var handles []string
 				for _, v := range resp.Messages {
-					handles = append(handles, v.ReceiptHandle)
-					message <- v
+					f(v)
 				}
-				if err := c.consumer.AckMessage(handles); err != nil {
-					stop <- err
-				}
-				stop <- nil
-			}
-		case err := <-errChan:
-			{
-				if !strings.Contains(err.(errors.ErrCode).Error(), "MessageNotExist") {
-					stop <- err
-				}
+				endChan <- struct{}{}
 			}
 		case <-time.After(35 * time.Second):
 			{
-				stop <- nil
+				endChan <- struct{}{}
 			}
 		}
-
 	}()
 
 	c.consumer.ConsumeMessage(respChan, errChan, numOfMessage, waitSeconds)
 
-	err := <-stop
+	<-endChan
+}
 
-	return list, err
+func (c *Consumer) Ack(cme mq_http_sdk.ConsumeMessageEntry) error {
+	return c.consumer.AckMessage([]string{cme.ReceiptHandle})
 }
