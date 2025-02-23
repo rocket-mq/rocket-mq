@@ -1,9 +1,19 @@
 package producer
 
 import (
+	"time"
+
 	"github.com/aliyunmq/mq-http-go-sdk"
 
 	"github.com/rocket-mq/rocket-mq/v4/producer/message"
+)
+
+type TransactionResolution int32
+
+const (
+	UNKNOWN TransactionResolution = iota // 开始生成枚举值, 默认为0
+	COMMIT
+	ROLLBACK
 )
 
 type Producer struct {
@@ -14,6 +24,8 @@ type Producer struct {
 	instanceId string
 	groupId    string
 	producer   mq_http_sdk.MQProducer
+	trans      mq_http_sdk.MQTransProducer
+	checker    func(mq_http_sdk.ConsumeMessageEntry) TransactionResolution
 }
 
 type Option func(*Producer)
@@ -21,6 +33,13 @@ type Option func(*Producer)
 func WithGroupId(groupId string) Option {
 	return func(p *Producer) {
 		p.groupId = groupId
+	}
+}
+
+func WithTrans(groupId string, checker func(mq_http_sdk.ConsumeMessageEntry) TransactionResolution) Option {
+	return func(p *Producer) {
+		p.groupId = groupId
+		p.checker = checker
 	}
 }
 
@@ -38,11 +57,64 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 	}
 
 	client := mq_http_sdk.NewAliyunMQClient(endpoint, accessKey, secretKey, "")
-	p.producer = client.GetProducer(instanceId, topic)
+
+	if p.checker == nil {
+		p.producer = client.GetProducer(instanceId, topic)
+		return p
+	}
+
+	p.trans = client.GetTransProducer(instanceId, topic, p.groupId)
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				return
+			}
+		}()
+		for {
+			endChan := make(chan struct{})
+			respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
+			errChan := make(chan error)
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						endChan <- struct{}{}
+					}
+				}()
+				select {
+				case resp := <-respChan:
+					{
+						for _, v := range resp.Messages {
+							tr := p.checker(v)
+							if tr == COMMIT {
+								_ = p.trans.Commit(v.ReceiptHandle)
+							} else if tr == ROLLBACK {
+								_ = p.trans.Rollback(v.ReceiptHandle)
+							}
+						}
+					}
+				case <-errChan:
+					{
+						endChan <- struct{}{}
+					}
+				case <-time.After(35 * time.Second):
+					{
+						endChan <- struct{}{}
+					}
+				}
+			}()
+			p.trans.ConsumeHalfMessage(respChan, errChan, 3, 3)
+			<-endChan
+		}
+	}()
 
 	return p
 }
 
 func (p *Producer) PublishMessage(data *message.Message) (mq_http_sdk.PublishMessageResponse, error) {
 	return p.producer.PublishMessage(data.Wrap())
+}
+
+func (p *Producer) PublishTransMessage(data *message.Message) (mq_http_sdk.PublishMessageResponse, error) {
+	return p.trans.PublishMessage(data.Wrap())
 }
