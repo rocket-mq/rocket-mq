@@ -119,3 +119,11 @@ func (p *Producer) PublishMessage(data *message.Message) (mq_http_sdk.PublishMes
 func (p *Producer) PublishTransMessage(data *message.Message) (mq_http_sdk.PublishMessageResponse, error) {
 	return p.trans.PublishMessage(data.Wrap())
 }
+
+func (p *Producer) Commit(receiptHandle string) error {
+	return p.trans.Commit(receiptHandle)
+}
+
+func (p *Producer) Rollback(receiptHandle string) error {
+	return p.trans.Rollback(receiptHandle)
+}
