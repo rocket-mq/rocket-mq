@@ -1,4 +1,4 @@
-package rocketmq
+package v5
 
 import (
 	"context"

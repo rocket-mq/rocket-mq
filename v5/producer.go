@@ -1,4 +1,4 @@
-package rocketmq
+package v5
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/apache/rocketmq-clients/golang/v5"
 	"github.com/apache/rocketmq-clients/golang/v5/credentials"
 
-	"github.com/rocket-mq/rocket-mq/producer"
+	"github.com/rocket-mq/rocket-mq/v5/producer"
 )
 
 // Producer 生产者

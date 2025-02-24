@@ -1,4 +1,4 @@
-package rocketmq
+package v5
 
 // IsMessageNotFoundErr 是否为消费者拉取不到消息的错误
 func IsMessageNotFoundErr(err error) bool {
