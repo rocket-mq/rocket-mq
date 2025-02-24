@@ -71,6 +71,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 			endChan := make(chan struct{})
 			respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
 			errChan := make(chan error)
+
 			go func() {
 				defer func() {
 					if r := recover(); r != nil {
