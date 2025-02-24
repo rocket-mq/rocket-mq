@@ -30,12 +30,6 @@ type Producer struct {
 
 type Option func(*Producer)
 
-func WithGroupId(groupId string) Option {
-	return func(p *Producer) {
-		p.groupId = groupId
-	}
-}
-
 func WithTrans(groupId string, checker func(mq_http_sdk.ConsumeMessageEntry) TransactionResolution) Option {
 	return func(p *Producer) {
 		p.groupId = groupId
@@ -87,8 +81,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 				case resp := <-respChan:
 					{
 						for _, v := range resp.Messages {
-							tr := p.checker(v)
-							if tr == COMMIT {
+							if tr := p.checker(v); tr == COMMIT {
 								_ = p.trans.Commit(v.ReceiptHandle)
 							} else if tr == ROLLBACK {
 								_ = p.trans.Rollback(v.ReceiptHandle)
