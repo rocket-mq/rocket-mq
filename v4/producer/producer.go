@@ -71,6 +71,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 				return
 			}
 		}()
+
 		for {
 			endChan := make(chan struct{})
 			respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
@@ -81,6 +82,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 						endChan <- struct{}{}
 					}
 				}()
+
 				select {
 				case resp := <-respChan:
 					{
@@ -104,7 +106,9 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 					}
 				}
 			}()
+
 			p.trans.ConsumeHalfMessage(respChan, errChan, 3, 3)
+
 			<-endChan
 		}
 	}()
