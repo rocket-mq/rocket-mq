@@ -37,6 +37,7 @@ func WithTrans(groupId string, checker func(mq_http_sdk.ConsumeMessageEntry) Tra
 	}
 }
 
+// New 实例化生产者
 func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Option) *Producer {
 	p := &Producer{
 		endpoint:   endpoint,
@@ -109,18 +110,22 @@ func New(endpoint, accessKey, secretKey, topic, instanceId string, opts ...Optio
 	return p
 }
 
+// PublishMessage 发送消息
 func (p *Producer) PublishMessage(data *message.Message) (mq_http_sdk.PublishMessageResponse, error) {
 	return p.producer.PublishMessage(data.Wrap())
 }
 
+// PublishTransMessage 发送事务消息
 func (p *Producer) PublishTransMessage(data *message.Message) (mq_http_sdk.PublishMessageResponse, error) {
 	return p.trans.PublishMessage(data.Wrap())
 }
 
+// Commit 提交事务消息
 func (p *Producer) Commit(receiptHandle string) error {
 	return p.trans.Commit(receiptHandle)
 }
 
+// Rollback 回滚事务消息
 func (p *Producer) Rollback(receiptHandle string) error {
 	return p.trans.Rollback(receiptHandle)
 }

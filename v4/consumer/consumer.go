@@ -25,6 +25,7 @@ func WithTag(tag string) Option {
 	}
 }
 
+// New 实例化一个消费者
 func New(endpoint, accessKey, secretKey, topic, instanceId, groupId string, opts ...Option) *Consumer {
 	c := &Consumer{
 		endpoint:   endpoint,
@@ -45,6 +46,7 @@ func New(endpoint, accessKey, secretKey, topic, instanceId, groupId string, opts
 	return c
 }
 
+// Receive 消费消息
 func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64, f func(mq_http_sdk.ConsumeMessageEntry)) {
 	endChan := make(chan struct{})
 	respChan := make(chan mq_http_sdk.ConsumeMessageResponse)
@@ -56,6 +58,7 @@ func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64, f func(mq_http
 				endChan <- struct{}{}
 			}
 		}()
+
 		select {
 		case resp := <-respChan:
 			{
@@ -80,6 +83,7 @@ func (c *Consumer) Receive(numOfMessage int32, waitSeconds int64, f func(mq_http
 	<-endChan
 }
 
+// Ack 确认消费
 func (c *Consumer) Ack(cme mq_http_sdk.ConsumeMessageEntry) error {
 	return c.consumer.AckMessage([]string{cme.ReceiptHandle})
 }
