@@ -88,6 +88,11 @@ func New(body string, opts ...Option) *Message {
 	return message
 }
 
+// NewWithBytes creates a new message with bytes
+func NewWithBytes(body []byte, opts ...Option) *Message {
+	return New(string(body), opts...)
+}
+
 // Wrap converts the message to a rocketmq message
 func (m *Message) Wrap() mq_http_sdk.PublishMessageRequest {
 	message := mq_http_sdk.PublishMessageRequest{
