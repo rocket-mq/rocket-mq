@@ -1,6 +1,7 @@
 package v5
 
 import (
+	"os"
 	"time"
 
 	"github.com/apache/rocketmq-clients/golang/v5"
@@ -8,6 +9,7 @@ import (
 
 type RocketMQ struct {
 	debug              string
+	logPath            string
 	topic              []string
 	endpoint           string
 	accessKey          string
@@ -54,9 +56,17 @@ func WithAwaitDuration(awaitDuration time.Duration) Option {
 	}
 }
 
+func WithLogPath(logPath string) Option {
+	return func(rmq *RocketMQ) {
+		rmq.logPath = logPath
+	}
+}
+
 func New(endpoint, accessKey, secretKey string, topic []string, opts ...Option) *RocketMQ {
+	logPath, _ := os.Getwd()
 	rmq := &RocketMQ{
 		debug:     "true",
+		logPath:   logPath,
 		endpoint:  endpoint,
 		accessKey: accessKey,
 		secretKey: secretKey,

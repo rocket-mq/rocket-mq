@@ -3,6 +3,7 @@ package v5
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/apache/rocketmq-clients/golang/v5"
 	"github.com/apache/rocketmq-clients/golang/v5/credentials"
@@ -18,6 +19,7 @@ type Producer struct {
 // Producer 创建生产者
 func (rmq *RocketMQ) Producer() (*Producer, error) {
 	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
+	_ = os.Setenv("user.home", strings.TrimRight(rmq.logPath, "/"))
 	golang.ResetLogger()
 
 	opts := []golang.ProducerOption{
