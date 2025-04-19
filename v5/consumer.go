@@ -3,6 +3,7 @@ package v5
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/apache/rocketmq-clients/golang/v5"
@@ -17,6 +18,7 @@ type Consumer struct {
 // Consumer 创建消费者
 func (rmq *RocketMQ) Consumer() (*Consumer, error) {
 	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
+	_ = os.Setenv("user.home", strings.TrimRight(rmq.logPath, "/"))
 	golang.ResetLogger()
 
 	se := make(map[string]*golang.FilterExpression, len(rmq.topic))
