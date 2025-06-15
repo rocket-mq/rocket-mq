@@ -14,3 +14,12 @@ func IsMessageNotFoundErr(err error) bool {
 	}
 	return false
 }
+
+// IsReceiveTimoutErr 是否为消费者拉取消息超时错误
+func IsReceiveTimoutErr(err error) bool {
+	errStr := err.Error()
+	if errStr == "[error] CODE=DEADLINE_EXCEEDED" {
+		return true
+	}
+	return false
+}
