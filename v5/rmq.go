@@ -50,6 +50,7 @@ func WithTransactionChecker(transactionChecker func(*golang.MessageView) golang.
 	}
 }
 
+// WithAwaitDuration 设置消息接收的超时时间/接收函数的最大等待时间，此参数决定了客户端在接收消息时等待服务端响应的最大时间。
 func WithAwaitDuration(awaitDuration time.Duration) Option {
 	return func(rmq *RocketMQ) {
 		rmq.awaitDuration = awaitDuration
@@ -65,12 +66,13 @@ func WithLogPath(logPath string) Option {
 func New(endpoint, accessKey, secretKey string, topic []string, opts ...Option) *RocketMQ {
 	logPath, _ := os.Getwd()
 	rmq := &RocketMQ{
-		debug:     "true",
-		logPath:   logPath,
-		endpoint:  endpoint,
-		accessKey: accessKey,
-		secretKey: secretKey,
-		topic:     topic,
+		debug:         "true",
+		logPath:       logPath,
+		endpoint:      endpoint,
+		accessKey:     accessKey,
+		secretKey:     secretKey,
+		topic:         topic,
+		awaitDuration: time.Second * 5,
 	}
 
 	for _, opt := range opts {

@@ -34,7 +34,7 @@ func (rmq *RocketMQ) Consumer() (*Consumer, error) {
 			AccessKey:    rmq.accessKey,
 			AccessSecret: rmq.secretKey,
 		},
-	}, golang.WithAwaitDuration(rmq.awaitDuration), golang.WithSubscriptionExpressions(se))
+	}, golang.WithSimpleAwaitDuration(rmq.awaitDuration), golang.WithSimpleSubscriptionExpressions(se))
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,8 @@ func (c *Consumer) Close() error {
 }
 
 // Receive 接收消息
+// maxMessageNum 一次接收的最大消息数
+// invisibleDuration 设置消息的不可见时间，当消息被消费者拉取后，该消息在指定的时间内对其他消费者不可见，以确保消息处理的幂等性
 func (c *Consumer) Receive(ctx context.Context, maxMessageNum int32, invisibleDuration time.Duration) ([]*golang.MessageView, error) {
 	return c.consumer.Receive(ctx, maxMessageNum, invisibleDuration)
 }
