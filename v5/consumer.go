@@ -82,13 +82,10 @@ func (c *SimpleConsumer) ReceiveAndAutoAck(ctx context.Context, maxMessageNum in
 	return mvs, nil
 }
 
-// PushConsumer 推送型消费者
-type PushConsumer struct {
-	consumer golang.PushConsumer
-}
-
 // PushConsumer 创建推送型消费者
-func (rmq *RocketMQ) PushConsumer(pushConsumptionThreadCount, pushMaxCacheMessageCount int32, consume func(*golang.MessageView) golang.ConsumerResult) (*PushConsumer, error) {
+// pushConsumptionThreadCount 用于设置 Push 消费模式下的消费线程数
+// pushMaxCacheMessageCount 用于设置 Push 消费模式下客户端本地缓存的最大消息数量
+func (rmq *RocketMQ) PushConsumer(pushConsumptionThreadCount, pushMaxCacheMessageCount int32, consume func(*golang.MessageView) golang.ConsumerResult, closeChan <-chan struct{}) error {
 	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
 	_ = os.Setenv("user.home", strings.TrimRight(rmq.logPath, "/"))
 	golang.ResetLogger()
@@ -116,17 +113,16 @@ func (rmq *RocketMQ) PushConsumer(pushConsumptionThreadCount, pushMaxCacheMessag
 		}),
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err = consumer.Start(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &PushConsumer{consumer: consumer}, nil
-}
+	defer consumer.GracefulStop()
 
-// Close 关闭推送型消费者
-func (c *PushConsumer) Close() error {
-	return c.consumer.GracefulStop()
+	<-closeChan
+
+	return nil
 }
