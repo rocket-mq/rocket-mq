@@ -10,13 +10,13 @@ import (
 	"github.com/apache/rocketmq-clients/golang/v5/credentials"
 )
 
-// Consumer 消费者
-type Consumer struct {
+// SimpleConsumer 消费者
+type SimpleConsumer struct {
 	consumer golang.SimpleConsumer
 }
 
-// Consumer 创建消费者
-func (rmq *RocketMQ) Consumer() (*Consumer, error) {
+// SimpleConsumer 创建消费者
+func (rmq *RocketMQ) SimpleConsumer() (*SimpleConsumer, error) {
 	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
 	_ = os.Setenv("user.home", strings.TrimRight(rmq.logPath, "/"))
 	golang.ResetLogger()
@@ -43,28 +43,28 @@ func (rmq *RocketMQ) Consumer() (*Consumer, error) {
 		return nil, err
 	}
 
-	return &Consumer{consumer: consumer}, nil
+	return &SimpleConsumer{consumer: consumer}, nil
 }
 
 // Close 关闭消费者
-func (c *Consumer) Close() error {
+func (c *SimpleConsumer) Close() error {
 	return c.consumer.GracefulStop()
 }
 
 // Receive 接收消息
 // maxMessageNum 一次接收的最大消息数
 // invisibleDuration 设置消息的不可见时间，当消息被消费者拉取后，该消息在指定的时间内对其他消费者不可见，以确保消息处理的幂等性，需要 > 20s
-func (c *Consumer) Receive(ctx context.Context, maxMessageNum int32, invisibleDuration time.Duration) ([]*golang.MessageView, error) {
+func (c *SimpleConsumer) Receive(ctx context.Context, maxMessageNum int32, invisibleDuration time.Duration) ([]*golang.MessageView, error) {
 	return c.consumer.Receive(ctx, maxMessageNum, invisibleDuration)
 }
 
 // Ack 确认消息
-func (c *Consumer) Ack(ctx context.Context, messageView *golang.MessageView) error {
+func (c *SimpleConsumer) Ack(ctx context.Context, messageView *golang.MessageView) error {
 	return c.consumer.Ack(ctx, messageView)
 }
 
 // ReceiveAndAutoAck 接收消息并自动确认
-func (c *Consumer) ReceiveAndAutoAck(ctx context.Context, maxMessageNum int32, invisibleDuration time.Duration) ([]*golang.MessageView, error) {
+func (c *SimpleConsumer) ReceiveAndAutoAck(ctx context.Context, maxMessageNum int32, invisibleDuration time.Duration) ([]*golang.MessageView, error) {
 	messageView, err := c.consumer.Receive(ctx, maxMessageNum, invisibleDuration)
 	if err != nil {
 		return nil, err
