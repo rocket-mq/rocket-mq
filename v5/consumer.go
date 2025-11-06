@@ -81,3 +81,52 @@ func (c *SimpleConsumer) ReceiveAndAutoAck(ctx context.Context, maxMessageNum in
 
 	return mvs, nil
 }
+
+// PushConsumer 推送型消费者
+type PushConsumer struct {
+	consumer golang.PushConsumer
+}
+
+// PushConsumer 创建推送型消费者
+func (rmq *RocketMQ) PushConsumer(pushConsumptionThreadCount, pushMaxCacheMessageCount int32, consume func(*golang.MessageView) golang.ConsumerResult) (*PushConsumer, error) {
+	_ = os.Setenv("mq.consoleAppender.enabled", rmq.debug)
+	_ = os.Setenv("user.home", strings.TrimRight(rmq.logPath, "/"))
+	golang.ResetLogger()
+
+	se := make(map[string]*golang.FilterExpression, len(rmq.topic))
+	for _, topic := range rmq.topic {
+		se[topic] = golang.SUB_ALL
+	}
+
+	consumer, err := golang.NewPushConsumer(&golang.Config{
+		Endpoint:      rmq.endpoint,
+		NameSpace:     rmq.nameSpace,
+		ConsumerGroup: rmq.consumerGroup,
+		Credentials: &credentials.SessionCredentials{
+			AccessKey:    rmq.accessKey,
+			AccessSecret: rmq.secretKey,
+		},
+	},
+		golang.WithPushAwaitDuration(rmq.awaitDuration),
+		golang.WithPushSubscriptionExpressions(se),
+		golang.WithPushConsumptionThreadCount(pushConsumptionThreadCount),
+		golang.WithPushMaxCacheMessageCount(pushMaxCacheMessageCount),
+		golang.WithPushMessageListener(&golang.FuncMessageListener{
+			Consume: consume,
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = consumer.Start(); err != nil {
+		return nil, err
+	}
+
+	return &PushConsumer{consumer: consumer}, nil
+}
+
+// Close 关闭推送型消费者
+func (c *PushConsumer) Close() error {
+	return c.consumer.GracefulStop()
+}
